@@ -1,26 +1,160 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap');
+
 @import "tailwindcss";
 
+@theme {
+  --color-navy: #0A2240;
+  --color-navy-light: #0D2D52;
+  --color-navy-dark: #061629;
+  --color-red-revs: #CE0E2D;
+  --color-red-dark: #A50B24;
+  --color-parchment: #F5F0E8;
+  --color-parchment-dark: #EDE7D9;
+  --color-gold: #C5A55A;
+  --color-gold-light: #D4B870;
+  --color-field: #2D5A27;
+  --color-charcoal: #1A1A1A;
+  --color-warmwhite: #FAFAF7;
+
+  --font-display: 'Oswald', sans-serif;
+  --font-body: 'Source Sans 3', sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #0A2240;
+  --foreground: #F5F0E8;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Source Sans 3', sans-serif;
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #061629; }
+::-webkit-scrollbar-thumb { background: #CE0E2D; border-radius: 3px; }
+
+/* Section divider with red slash */
+.slash-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.slash-divider::before,
+.slash-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(197, 165, 90, 0.3);
+}
+
+/* Parchment card style */
+.card-parchment {
+  background: #F5F0E8;
+  color: #1A1A1A;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(10,34,64,0.15);
+}
+
+/* Navy card style */
+.card-navy {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+}
+
+/* Stamp animation */
+@keyframes stamp {
+  0% { transform: scale(2) rotate(-5deg); opacity: 0; }
+  70% { transform: scale(0.9) rotate(1deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.animate-stamp { animation: stamp 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+
+/* Musket fire celebration */
+@keyframes musketFire {
+  0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+  30% { transform: scale(1.3) rotate(5deg); opacity: 1; }
+  60% { transform: scale(0.95) rotate(-2deg); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-musket { animation: musketFire 0.7s ease-out forwards; }
+
+/* Shimmering gold text */
+@keyframes goldShimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.text-gold-shimmer {
+  background: linear-gradient(90deg, #C5A55A, #F0D080, #C5A55A);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: goldShimmer 3s linear infinite;
+}
+
+/* Lock badge pulse */
+@keyframes lockPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.animate-lock-pulse { animation: lockPulse 2s ease-in-out infinite; }
+
+/* Slam in player */
+@keyframes slamIn {
+  0% { transform: scale(1.4); opacity: 0; }
+  60% { transform: scale(0.95); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-slam { animation: slamIn 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+
+/* Red diagonal stripe overlay (defiance motif) */
+.stripe-overlay {
+  position: relative;
+  overflow: hidden;
+}
+.stripe-overlay::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 20px,
+    rgba(206, 14, 45, 0.04) 20px,
+    rgba(206, 14, 45, 0.04) 21px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Bottom nav safe area */
+.bottom-nav-safe {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid #CE0E2D;
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: rgba(206, 14, 45, 0.3);
+  color: #F5F0E8;
+}
+
+/* Player selection active feedback */
+.player-card-active {
+  transition: transform 0.1s ease;
+}
+.player-card-active:active {
+  transform: scale(0.97);
 }

@@ -1,65 +1,181 @@
-import Image from "next/image";
+import { cookies } from 'next/headers'
+import Link from 'next/link'
+import Navigation from '@/components/Navigation'
+import MatchCard from '@/components/MatchCard'
+import { createServerSupabase } from '@/lib/supabase'
 
-export default function Home() {
+async function getMatches() {
+  try {
+    const supabase = await createServerSupabase()
+    const { data } = await supabase
+      .from('matches')
+      .select('*')
+      .order('match_date', { ascending: true })
+    return data || []
+  } catch {
+    return []
+  }
+}
+
+async function getCurrentUser() {
+  try {
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('rev11_user_id')?.value
+    if (!userId) return null
+    const supabase = await createServerSupabase()
+    const { data } = await supabase.from('users').select('*').eq('id', userId).single()
+    return data
+  } catch {
+    return null
+  }
+}
+
+async function getUserPredictions(userId: string) {
+  try {
+    const supabase = await createServerSupabase()
+    const { data } = await supabase
+      .from('predictions')
+      .select('match_id, points_earned, is_locked')
+      .eq('user_id', userId)
+    return data || []
+  } catch {
+    return []
+  }
+}
+
+export default async function HomePage() {
+  const [matches, user] = await Promise.all([getMatches(), getCurrentUser()])
+  const predictions = user ? await getUserPredictions(user.id) : []
+  const predictionMap = new Map(predictions.map(p => [p.match_id, p]))
+  const upcoming = matches.filter(m => m.status === 'upcoming' || m.status === 'locked')
+  const completed = matches.filter(m => m.status === 'completed')
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#0A2240] stripe-overlay">
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 text-center">
+          <div className="mb-8">
+            <h1
+              className="text-8xl font-black text-[#F5F0E8] tracking-widest uppercase"
+              style={{ fontFamily: "'Oswald', sans-serif" }}
+            >
+              REV11
+            </h1>
+            <div className="h-1 bg-[#CE0E2D] mx-auto mt-2 mb-4" style={{ width: '60%' }} />
+            <p
+              className="text-[#C5A55A] text-sm tracking-[0.3em] uppercase"
+              style={{ fontFamily: "'Oswald', sans-serif" }}
+            >
+              ★ Predict the Starting XI ★
+            </p>
+          </div>
+
+          <div className="max-w-sm mb-10">
+            <p className="text-[#F5F0E8]/80 text-lg leading-relaxed">
+              Pick the New England Revolution&apos;s starting lineup before kickoff.
+              Earn points. Climb The Fort&apos;s leaderboard. Bring the fight.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-6 max-w-xs mb-10 text-center">
+            {[
+              { icon: '⚔️', label: 'Pick 11' },
+              { icon: '🏆', label: 'Earn Points' },
+              { icon: '📋', label: 'Lead The Fort' },
+            ].map(({ icon, label }) => (
+              <div key={label}>
+                <div className="text-3xl mb-1">{icon}</div>
+                <p className="text-xs uppercase tracking-wider text-white/50" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                  {label}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <Link
+            href="/auth/register"
+            className="bg-[#CE0E2D] text-white px-10 py-4 rounded-lg font-black uppercase tracking-widest text-lg hover:bg-[#A50B24] transition-all active:scale-95 shadow-lg"
+            style={{ fontFamily: "'Oswald', sans-serif" }}
+          >
+            Join the Fight
+          </Link>
+
+          <p className="mt-4 text-white/30 text-sm">
+            Already have an account?{' '}
+            <Link href="/auth/register" className="text-[#C5A55A] hover:underline">
+              Sign in
+            </Link>
+          </p>
+
+          <div className="absolute bottom-8 left-0 right-0 text-center">
+            <p className="text-white/20 text-xs tracking-[0.4em] uppercase" style={{ fontFamily: "'Oswald', sans-serif" }}>
+              ★ The Fort ★ Midnight Riders ★ Bring the Fight ★
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-[#0A2240]">
+      <Navigation />
+      <main className="md:ml-64 pb-24 md:pb-8 px-4 py-6 max-w-2xl mx-auto md:mx-0 md:max-w-2xl md:px-8">
+        <div className="mb-6">
+          <h1 className="text-3xl font-black text-[#F5F0E8] uppercase tracking-widest" style={{ fontFamily: "'Oswald', sans-serif" }}>
+            The Fort
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-white/50 text-sm mt-1">
+            Welcome back{user.display_name ? `, ${user.display_name}` : ''}. Make your picks before kickoff.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        {upcoming.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-xs uppercase tracking-widest text-[#C5A55A] mb-3" style={{ fontFamily: "'Oswald', sans-serif" }}>
+              ⚔️ Upcoming Matches
+            </h2>
+            <div className="space-y-3">
+              {upcoming.map(match => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  predictionStatus={predictionMap.has(match.id) ? 'saved' : 'none'}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {upcoming.length === 0 && (
+          <div className="text-center py-16 text-white/40">
+            <div className="text-5xl mb-4">⚔️</div>
+            <p className="uppercase tracking-widest text-sm" style={{ fontFamily: "'Oswald', sans-serif" }}>No Upcoming Matches</p>
+            <p className="text-sm mt-2">Check back soon. The fight continues.</p>
+          </div>
+        )}
+
+        {completed.length > 0 && (
+          <section>
+            <h2 className="text-xs uppercase tracking-widest text-[#C5A55A] mb-3" style={{ fontFamily: "'Oswald', sans-serif" }}>
+              📋 Recent Results
+            </h2>
+            <div className="space-y-3">
+              {completed.slice(0, 5).map(match => {
+                const pred = predictionMap.get(match.id)
+                return (
+                  <MatchCard
+                    key={match.id}
+                    match={match}
+                    predictionStatus={pred ? 'locked' : 'none'}
+                    pointsEarned={pred?.points_earned}
+                  />
+                )
+              })}
+            </div>
+          </section>
+        )}
       </main>
     </div>
-  );
+  )
 }
