@@ -9,7 +9,6 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [sent, setSent] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,7 +24,8 @@ export default function RegisterPage() {
       })
       const data = await res.json()
       if (res.ok) {
-        setSent(true)
+        router.push('/')
+        router.refresh()
       } else {
         setError(data.error || 'Something went wrong. Try again.')
       }
@@ -34,36 +34,6 @@ export default function RegisterPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  if (sent) {
-    return (
-      <div className="min-h-screen bg-[#0A2240] flex items-center justify-center px-4">
-        <div className="w-full max-w-md text-center">
-          <div className="text-6xl mb-6">📬</div>
-          <h1 className="text-3xl font-black text-[#F5F0E8] uppercase tracking-widest mb-3" style={{ fontFamily: "'Oswald', sans-serif" }}>
-            Check Your Email
-          </h1>
-          <p className="text-white/60 mb-6">
-            We sent a verification code to <span className="text-[#C5A55A] font-semibold">{email}</span>.
-            Enter it below to join The Fort.
-          </p>
-          <Link
-            href={`/auth/verify?email=${encodeURIComponent(email)}`}
-            className="inline-block bg-[#CE0E2D] text-white px-8 py-3 rounded-lg font-bold uppercase tracking-widest hover:bg-[#A50B24] transition-all"
-            style={{ fontFamily: "'Oswald', sans-serif" }}
-          >
-            Enter My Code
-          </Link>
-          <p className="mt-4 text-white/30 text-sm">
-            Didn&apos;t receive it?{' '}
-            <button onClick={() => setSent(false)} className="text-[#C5A55A] hover:underline">
-              Try again
-            </button>
-          </p>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -88,7 +58,7 @@ export default function RegisterPage() {
             Enter The Fort
           </h2>
           <p className="text-white/50 text-sm mb-6">
-            Enter your email to receive a verification code. No password needed.
+            Enter your email to access the lineup. No password needed.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -122,7 +92,7 @@ export default function RegisterPage() {
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  Sending...
+                  Entering...
                 </span>
               ) : (
                 '⚔️ Bring the Fight'
@@ -133,7 +103,7 @@ export default function RegisterPage() {
           <div className="mt-6 pt-6 border-t border-white/10 text-center">
             <p className="text-white/30 text-xs">
               By joining, you&apos;re enlisting in The Fort.
-              No spam, just match day alerts.
+              No spam, just match day results.
             </p>
           </div>
         </div>

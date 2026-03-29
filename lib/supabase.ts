@@ -167,26 +167,6 @@ export type Database = {
         }
         Update: Record<string, never>
       }
-      auth_codes: {
-        Row: {
-          id: string
-          email: string
-          code: string
-          expires_at: string
-          used: boolean
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          email: string
-          code: string
-          expires_at: string
-          used?: boolean
-        }
-        Update: {
-          used?: boolean
-        }
-      }
     }
   }
 }

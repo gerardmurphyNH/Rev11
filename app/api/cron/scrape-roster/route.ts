@@ -28,6 +28,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, message: 'Scrape returned no players. Manual update needed.', scraped: 0 })
   }
 
+  // Mark entire roster inactive, then re-activate only current players
+  await supabaseAdmin.from('players').update({ is_active: false }).neq('id', '00000000-0000-0000-0000-000000000000')
+
   let upserted = 0
   for (const player of players) {
     const { error } = await supabaseAdmin

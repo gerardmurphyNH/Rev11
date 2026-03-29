@@ -77,16 +77,6 @@ CREATE TABLE correct_lineup_players (
   UNIQUE(correct_lineup_id, player_id)
 );
 
--- Auth codes (magic link / verification codes)
-CREATE TABLE auth_codes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT NOT NULL,
-  code TEXT NOT NULL,
-  expires_at TIMESTAMPTZ NOT NULL,
-  used BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
 -- Indexes
 CREATE INDEX idx_predictions_user_id ON predictions(user_id);
 CREATE INDEX idx_predictions_match_id ON predictions(match_id);
@@ -94,7 +84,6 @@ CREATE INDEX idx_prediction_players_prediction_id ON prediction_players(predicti
 CREATE INDEX idx_correct_lineup_players_lineup_id ON correct_lineup_players(correct_lineup_id);
 CREATE INDEX idx_matches_status ON matches(status);
 CREATE INDEX idx_matches_match_date ON matches(match_date);
-CREATE INDEX idx_auth_codes_email ON auth_codes(email);
 CREATE INDEX idx_users_total_points ON users(total_points DESC);
 
 -- Row Level Security
@@ -105,7 +94,6 @@ ALTER TABLE predictions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prediction_players ENABLE ROW LEVEL SECURITY;
 ALTER TABLE correct_lineups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE correct_lineup_players ENABLE ROW LEVEL SECURITY;
-ALTER TABLE auth_codes ENABLE ROW LEVEL SECURITY;
 
 -- Public read for players, matches, correct lineups
 CREATE POLICY "Players are publicly readable" ON players FOR SELECT USING (true);
@@ -113,13 +101,13 @@ CREATE POLICY "Matches are publicly readable" ON matches FOR SELECT USING (true)
 CREATE POLICY "Confirmed lineups are publicly readable" ON correct_lineups FOR SELECT USING (status = 'confirmed');
 CREATE POLICY "Correct lineup players are publicly readable" ON correct_lineup_players FOR SELECT USING (true);
 
--- Users: public read for leaderboard, own write
+-- Users: public read for leaderboard
 CREATE POLICY "Users are publicly readable" ON users FOR SELECT USING (true);
 
 -- Service role bypasses RLS (for server-side operations)
 -- The app uses supabaseAdmin (service role) for all mutations
 
--- Seed: Example 2026 MLS season players (update with actual roster)
+-- Seed: 2026 Revolution roster (update with actual squad)
 INSERT INTO players (name, jersey_number, position) VALUES
   ('Djordje Petrovic', 1, 'GK'),
   ('Earl Edwards Jr.', 18, 'GK'),

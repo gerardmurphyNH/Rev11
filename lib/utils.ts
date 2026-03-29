@@ -98,10 +98,6 @@ export function isAdmin(email: string): boolean {
   return adminEmails.includes(email)
 }
 
-export function generateAuthCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString()
-}
-
 export function getOrdinal(n: number): string {
   const s = ['th', 'st', 'nd', 'rd']
   const v = n % 100

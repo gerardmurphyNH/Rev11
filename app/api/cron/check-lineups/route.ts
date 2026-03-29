@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { scrapeMatchLineup } from '@/lib/scraper'
 import { sendAdminLineupAlert, sendAdminManualLineupRequest } from '@/lib/email'
-import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('Authorization')
@@ -83,11 +82,9 @@ export async function POST(req: NextRequest) {
             )
           }
 
-          const confirmToken = crypto.randomBytes(32).toString('hex')
           await sendAdminLineupAlert(adminEmails, {
             match,
             playerNames: matchedNames,
-            confirmToken,
           })
           alerted++
         } else {

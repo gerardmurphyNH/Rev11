@@ -18,7 +18,7 @@ export interface ScrapedMatch {
 
 const REVS_BASE_URL = 'https://www.revolutionsoccer.net'
 const ROSTER_URL = `${REVS_BASE_URL}/roster/`
-const SCHEDULE_URL = `${REVS_BASE_URL}/schedule/#competition=all`
+const REVS_ESPN_ID = '189' // New England Revolution ESPN team ID
 
 async function fetchHtml(url: string): Promise<string | null> {
   try {
@@ -46,127 +46,103 @@ function normalizePosition(raw: string): 'GK' | 'DEF' | 'MID' | 'FWD' | null {
 }
 
 export async function scrapeRoster(): Promise<ScrapedPlayer[]> {
-  const html = await fetchHtml(ROSTER_URL)
-  if (!html) return []
-
-  const $ = cheerio.load(html)
-  const players: ScrapedPlayer[] = []
-
-  // Try multiple selector patterns for the Revs website
-  const selectors = [
-    '.roster-player',
-    '.player-card',
-    '[data-player]',
-    '.roster__player',
-    '.team-roster .player',
-  ]
-
-  for (const sel of selectors) {
-    const els = $(sel)
-    if (els.length > 5) {
-      els.each((_, el) => {
-        const $el = $(el)
-        const name = $el.find('.player-name, .name, [class*="name"]').first().text().trim()
-          || $el.find('h3, h4').first().text().trim()
-        if (!name) return
-
-        const numberText = $el.find('.jersey-number, .number, [class*="number"]').first().text().trim()
-        const jersey_number = numberText ? parseInt(numberText) || null : null
-
-        const posText = $el.find('.position, [class*="position"]').first().text().trim()
-        const position = posText ? normalizePosition(posText) : null
-
-        const imgEl = $el.find('img').first()
-        const headshot_url = imgEl.attr('src') || imgEl.attr('data-src') || null
-
-        players.push({ name, jersey_number, position, headshot_url })
-      })
-
-      if (players.length > 5) break
-    }
-  }
-
-  // Fallback: try JSON-LD or structured data
-  if (players.length === 0) {
-    $('script[type="application/ld+json"]').each((_, el) => {
-      try {
-        const data = JSON.parse($(el).html() || '{}')
-        if (data['@type'] === 'SportsTeam' && data.athlete) {
-          for (const athlete of data.athlete) {
-            players.push({
-              name: athlete.name || '',
-              jersey_number: null,
-              position: null,
-              headshot_url: athlete.image || null,
-            })
-          }
-        }
-      } catch { /* ignore */ }
+  // Use ESPN's public API — Revolution's roster page is JS-rendered and can't be scraped directly
+  try {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/teams/${REVS_ESPN_ID}/roster`
+    const res = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      next: { revalidate: 0 },
     })
-  }
+    if (!res.ok) return []
 
-  return players.filter(p => p.name.length > 1)
+    const data = await res.json()
+    const athletes: unknown[] = data.athletes || []
+
+    return athletes
+      .map(a => {
+        const athlete = a as Record<string, unknown>
+        const name = String(athlete.displayName || athlete.fullName || '')
+        if (!name) return null
+
+        const jersey = athlete.jersey ? parseInt(String(athlete.jersey)) || null : null
+        const posAbbr = (athlete.position as Record<string, unknown>)?.abbreviation as string | undefined
+        const position = posAbbr ? normalizePosition(posAbbr) : null
+        const headshot_url = (athlete.headshot as Record<string, unknown>)?.href as string | null ?? null
+
+        return { name, jersey_number: jersey, position, headshot_url }
+      })
+      .filter((p): p is ScrapedPlayer => p !== null && p.name.length > 1)
+  } catch {
+    return []
+  }
 }
 
 export async function scrapeSchedule(): Promise<ScrapedMatch[]> {
-  // The schedule page is likely JS-rendered; attempt a fetch
-  const html = await fetchHtml(SCHEDULE_URL)
-  if (!html) return []
+  // Use ESPN's public API — Revolution's schedule page is JS-rendered and can't be scraped directly
+  try {
+    const today = new Date()
+    const endOfYear = new Date(today.getFullYear(), 11, 31)
+    const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
+    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?limit=200&dates=${fmt(today)}-${fmt(endOfYear)}`
 
-  const $ = cheerio.load(html)
-  const matches: ScrapedMatch[] = []
+    const res = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      next: { revalidate: 0 },
+    })
+    if (!res.ok) return []
 
-  // Try common selectors
-  const selectors = [
-    '.match-card',
-    '.schedule-match',
-    '.game-card',
-    '[class*="match"]',
-    '[class*="game"]',
-  ]
+    const data = await res.json()
+    const events: unknown[] = data.events || []
+    const matches: ScrapedMatch[] = []
 
-  for (const sel of selectors) {
-    const els = $(sel)
-    if (els.length > 0) {
-      els.each((_, el) => {
-        const $el = $(el)
-        const opponent = $el.find('[class*="opponent"], [class*="team"]').not('[class*="home"]').first().text().trim()
-        if (!opponent) return
+    for (const event of events) {
+      const e = event as Record<string, unknown>
+      const competition = (e.competitions as Record<string, unknown>[])?.[0]
+      if (!competition) continue
 
-        const dateText = $el.find('[class*="date"], time').first().text().trim()
-        const timeText = $el.find('[class*="time"]').first().text().trim()
-        if (!dateText) return
-
-        // Try to parse date - best effort
-        const rawDate = `${dateText} ${timeText}`.trim()
-        let match_date = new Date().toISOString()
-        try {
-          const parsed = new Date(rawDate)
-          if (!isNaN(parsed.getTime())) match_date = parsed.toISOString()
-        } catch { /* ignore */ }
-
-        const isHome = !$el.find('[class*="away"]').length
-
-        const link = $el.find('a').first().attr('href') || null
-        const match_url = link ? (link.startsWith('http') ? link : `${REVS_BASE_URL}${link}`) : null
-
-        const comp = $el.find('[class*="competition"], [class*="league"]').first().text().trim() || 'MLS'
-
-        matches.push({
-          opponent,
-          match_date,
-          is_home: isHome,
-          venue: isHome ? 'Gillette Stadium' : null,
-          competition: comp,
-          match_url,
-        })
+      const competitors = (competition.competitors as Record<string, unknown>[]) || []
+      const revs = competitors.find(c => {
+        const team = c.team as Record<string, unknown>
+        return team?.id === REVS_ESPN_ID || String(team?.displayName || '').includes('Revolution')
+      })
+      const opponent = competitors.find(c => {
+        const team = c.team as Record<string, unknown>
+        return team?.id !== REVS_ESPN_ID && !String(team?.displayName || '').includes('Revolution')
       })
 
-      if (matches.length > 0) break
-    }
-  }
+      if (!revs || !opponent) continue
 
-  return matches
+      const opponentTeam = opponent.team as Record<string, unknown>
+      const opponentName = String(opponentTeam?.displayName || opponentTeam?.shortDisplayName || '')
+      if (!opponentName) continue
+
+      const isHome = revs.homeAway === 'home'
+      const match_date = String(competition.date || e.date || '')
+      if (!match_date) continue
+
+      const venue = (competition.venue as Record<string, unknown>)?.fullName as string | null
+      const link = ((e.links as Record<string, unknown>[])?.[0]?.href as string) || null
+
+      // Determine competition from season info
+      const seasonName = String((e.season as Record<string, unknown>)?.type?.name || '')
+      const competition_name = seasonName.toLowerCase().includes('open cup') ? 'US Open Cup'
+        : seasonName.toLowerCase().includes('concacaf') ? 'Concacaf Champions Cup'
+        : 'MLS'
+
+      matches.push({
+        opponent: opponentName,
+        match_date: new Date(match_date).toISOString(),
+        is_home: isHome,
+        venue: venue || (isHome ? 'Gillette Stadium' : null),
+        competition: competition_name,
+        match_url: link,
+      })
+    }
+
+    return matches
+  } catch {
+    return []
+  }
 }
 
 export async function scrapeMatchLineup(matchUrl: string): Promise<string[]> {

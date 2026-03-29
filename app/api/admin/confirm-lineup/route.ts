@@ -5,14 +5,12 @@ import { scoreMatch } from '@/lib/scoring'
 // One-click confirm from email link
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const token = searchParams.get('token')
   const matchId = searchParams.get('matchId')
 
-  if (!token || !matchId) {
+  if (!matchId) {
     return new NextResponse('Invalid link', { status: 400 })
   }
 
-  // Verify token matches pending lineup
   const { data: lineup } = await supabaseAdmin
     .from('correct_lineups')
     .select('id, status')
@@ -23,15 +21,14 @@ export async function GET(req: NextRequest) {
     return new NextResponse('No pending lineup found for this match', { status: 404 })
   }
 
-  if ((lineup as any).status === 'confirmed') {
+  if (lineup.status === 'confirmed') {
     return new NextResponse(confirmHtml('Already confirmed!'), {
       headers: { 'Content-Type': 'text/html' },
     })
   }
 
   // Confirm it
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabaseAdmin as any)
+  await supabaseAdmin
     .from('correct_lineups')
     .update({
       status: 'confirmed',

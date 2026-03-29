@@ -54,30 +54,6 @@ function baseEmailHtml(content: string): string {
   `
 }
 
-export async function sendVerificationEmail(email: string, code: string): Promise<void> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const verifyUrl = `${appUrl}/auth/verify?email=${encodeURIComponent(email)}&code=${code}`
-
-  const content = `
-    <h2>Join The Fort</h2>
-    <p>Your verification code for Rev11:</p>
-    <div style="background: #0A2240; border: 2px solid #CE0E2D; border-radius: 8px; padding: 24px; text-align: center; margin: 20px 0;">
-      <div style="font-size: 40px; font-weight: bold; letter-spacing: 12px; color: #F5F0E8; font-family: monospace;">${code}</div>
-      <p style="color: rgba(245,240,232,0.6); font-size: 12px; margin-top: 8px;">Expires in 15 minutes</p>
-    </div>
-    <p>Or click below to verify instantly:</p>
-    <a href="${verifyUrl}" class="btn">Verify & Enter The Fort</a>
-    <p style="color: rgba(245,240,232,0.5); font-size: 12px;">If you didn't request this, ignore this email.</p>
-  `
-
-  await transporter.sendMail({
-    from: `"Rev11 — The Fort" <${process.env.GMAIL_USER}>`,
-    to: email,
-    subject: "Your Rev11 Verification Code — Join The Fort",
-    html: baseEmailHtml(content),
-  })
-}
-
 export async function sendMatchReminderEmail(
   email: string,
   match: { opponent: string; match_date: string; id: string }
@@ -164,11 +140,10 @@ export async function sendAdminLineupAlert(
   data: {
     match: { opponent: string; match_date: string; id: string }
     playerNames: string[]
-    confirmToken: string
   }
 ): Promise<void> {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const confirmUrl = `${appUrl}/api/admin/confirm-lineup?token=${data.confirmToken}&matchId=${data.match.id}`
+  const confirmUrl = `${appUrl}/api/admin/confirm-lineup?matchId=${data.match.id}`
   const adminUrl = `${appUrl}/admin/lineup/${data.match.id}`
 
   const playerList = data.playerNames.map(n => `<li style="padding: 4px 0;">${n}</li>`).join('')
