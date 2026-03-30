@@ -7,14 +7,6 @@
     {
       "path": "/api/cron/scrape-schedule",
       "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/check-lineups",
-      "schedule": "*/10 * * * *"
-    },
-    {
-      "path": "/api/cron/send-reminders",
-      "schedule": "0 * * * *"
     }
   ]
 }
