@@ -38,7 +38,7 @@ export default async function MatchPage({ params }: PageProps) {
   // Get user's picked player IDs
   let pickedPlayerIds: string[] = []
   if (prediction) {
-    const { data: picks } = await supabaseAdminAdmin
+    const { data: picks } = await supabaseAdmin
       .from('prediction_players')
       .select('player_id')
       .eq('prediction_id', prediction.id)
