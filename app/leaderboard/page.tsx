@@ -8,7 +8,8 @@ import { getDisplayName, getOrdinal } from '@/lib/utils'
 export default async function LeaderboardPage() {
   const cookieStore = await cookies()
   const userId = cookieStore.get('rev11_user_id')?.value
-  if (!userId) redirect('/auth/register')
+  const email = cookieStore.get('rev11_user_email')?.value
+  if (!userId && !email) redirect('/auth/register')
 
   const { data: users } = await supabaseAdmin
     .from('users')

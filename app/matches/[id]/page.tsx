@@ -17,7 +17,20 @@ export default async function MatchPage({ params }: PageProps) {
 
   const cookieStore = await cookies()
   const userId = cookieStore.get('rev11_user_id')?.value
-  if (!userId) redirect('/auth/register')
+  const email = cookieStore.get('rev11_user_email')?.value
+  if (!userId && !email) redirect('/auth/register')
+
+  // Resolve user ID — fall back to email if cookie is stale
+  let resolvedUserId = userId
+  if (!resolvedUserId && email) {
+    const { data: byEmail } = await supabaseAdmin.from('users').select('id').eq('email', email).maybeSingle()
+    resolvedUserId = byEmail?.id ?? undefined
+    if (!resolvedUserId) {
+      const { data: created } = await supabaseAdmin.from('users').insert({ email }).select('id').single()
+      resolvedUserId = created?.id ?? undefined
+    }
+  }
+  if (!resolvedUserId) redirect('/auth/register')
 
   const [{ data: match }, { data: players }, { data: prediction }] = await Promise.all([
     supabaseAdmin.from('matches').select('*').eq('id', id).single(),
@@ -26,7 +39,7 @@ export default async function MatchPage({ params }: PageProps) {
       .from('predictions')
       .select('id, points_earned, is_perfect')
       .eq('match_id', id)
-      .eq('user_id', userId)
+      .eq('user_id', resolvedUserId)
       .maybeSingle(),
   ])
 
