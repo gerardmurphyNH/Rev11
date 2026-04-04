@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import LeaderboardComponent from '@/components/Leaderboard'
-import { createServerSupabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import { getDisplayName, getOrdinal } from '@/lib/utils'
 
 export default async function LeaderboardPage() {
@@ -10,9 +10,7 @@ export default async function LeaderboardPage() {
   const userId = cookieStore.get('rev11_user_id')?.value
   if (!userId) redirect('/auth/register')
 
-  const supabase = await createServerSupabase()
-
-  const { data: users } = await supabase
+  const { data: users } = await supabaseAdmin
     .from('users')
     .select('id, email, display_name, total_points, games_played, perfect_scores')
     .order('total_points', { ascending: false })

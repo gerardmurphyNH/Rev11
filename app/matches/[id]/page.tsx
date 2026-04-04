@@ -5,7 +5,7 @@ import Navigation from '@/components/Navigation'
 import LineupPicker from '@/components/LineupPicker'
 import CountdownTimer from '@/components/CountdownTimer'
 import ShareButtons from '@/components/ShareButtons'
-import { createServerSupabase, supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import { formatMatchDate, formatMatchTime, isMatchLocked } from '@/lib/utils'
 
 interface PageProps {
@@ -19,11 +19,9 @@ export default async function MatchPage({ params }: PageProps) {
   const userId = cookieStore.get('rev11_user_id')?.value
   if (!userId) redirect('/auth/register')
 
-  const supabase = await createServerSupabase()
-
   const [{ data: match }, { data: players }, { data: prediction }] = await Promise.all([
-    supabase.from('matches').select('*').eq('id', id).single(),
-    supabase.from('players').select('*').eq('is_active', true).order('position').order('name'),
+    supabaseAdmin.from('matches').select('*').eq('id', id).single(),
+    supabaseAdmin.from('players').select('*').eq('is_active', true).order('position').order('name'),
     supabaseAdmin
       .from('predictions')
       .select('id, points_earned, is_perfect')
@@ -40,7 +38,7 @@ export default async function MatchPage({ params }: PageProps) {
   // Get user's picked player IDs
   let pickedPlayerIds: string[] = []
   if (prediction) {
-    const { data: picks } = await supabaseAdmin
+    const { data: picks } = await supabaseAdminAdmin
       .from('prediction_players')
       .select('player_id')
       .eq('prediction_id', prediction.id)
@@ -50,7 +48,7 @@ export default async function MatchPage({ params }: PageProps) {
   // If completed, get correct lineup for results view
   let correctPlayerIds: Set<string> = new Set()
   if (isCompleted) {
-    const { data: correctLineup } = await supabase
+    const { data: correctLineup } = await supabaseAdmin
       .from('correct_lineups')
       .select('id')
       .eq('match_id', id)
@@ -58,7 +56,7 @@ export default async function MatchPage({ params }: PageProps) {
       .maybeSingle()
 
     if (correctLineup) {
-      const { data: correctPlayers } = await supabase
+      const { data: correctPlayers } = await supabaseAdmin
         .from('correct_lineup_players')
         .select('player_id')
         .eq('correct_lineup_id', correctLineup.id)

@@ -2,12 +2,11 @@ import { cookies } from 'next/headers'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import MatchCard from '@/components/MatchCard'
-import { createServerSupabase, supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 
 async function getMatches() {
   try {
-    const supabase = await createServerSupabase()
-    const { data } = await supabase
+    const { data } = await supabaseAdmin
       .from('matches')
       .select('*')
       .order('match_date', { ascending: true })

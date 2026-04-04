@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
-import { createServerSupabase, supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import { getDisplayName, getOrdinal, formatMatchDate, isMatchLocked } from '@/lib/utils'
 
 export default async function ProfilePage() {
