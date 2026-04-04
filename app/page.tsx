@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import MatchCard from '@/components/MatchCard'
-import { createServerSupabase } from '@/lib/supabase'
+import { createServerSupabase, supabaseAdmin } from '@/lib/supabase'
 
 async function getMatches() {
   try {
@@ -21,10 +21,26 @@ async function getCurrentUser() {
   try {
     const cookieStore = await cookies()
     const userId = cookieStore.get('rev11_user_id')?.value
-    if (!userId) return null
-    const supabase = await createServerSupabase()
-    const { data } = await supabase.from('users').select('*').eq('id', userId).single()
-    return data
+    const email = cookieStore.get('rev11_user_email')?.value
+
+    if (!userId && !email) return null
+
+    // Try by ID first
+    if (userId) {
+      const { data } = await supabaseAdmin.from('users').select('*').eq('id', userId).single()
+      if (data) return data
+    }
+
+    // Stale or missing ID — recover by email
+    if (email) {
+      const { data: existing } = await supabaseAdmin.from('users').select('*').eq('email', email).maybeSingle()
+      if (existing) return existing
+      // Auto-recreate account (e.g. after a DB clear)
+      const { data: created } = await supabaseAdmin.from('users').insert({ email }).select('*').single()
+      return created ?? null
+    }
+
+    return null
   } catch {
     return null
   }
@@ -32,8 +48,7 @@ async function getCurrentUser() {
 
 async function getUserPredictions(userId: string) {
   try {
-    const supabase = await createServerSupabase()
-    const { data } = await supabase
+    const { data } = await supabaseAdmin
       .from('predictions')
       .select('match_id, points_earned, is_locked')
       .eq('user_id', userId)

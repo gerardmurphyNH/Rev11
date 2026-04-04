@@ -8,17 +8,40 @@ import { getDisplayName, getOrdinal, formatMatchDate, isMatchLocked } from '@/li
 export default async function ProfilePage() {
   const cookieStore = await cookies()
   const userId = cookieStore.get('rev11_user_id')?.value
-  if (!userId) redirect('/auth/register')
+  const email = cookieStore.get('rev11_user_email')?.value
+  if (!userId && !email) redirect('/auth/register')
+
+  // Recover by email if ID is stale
+  let resolvedId = userId
+  if (userId) {
+    const { data: check } = await supabaseAdmin.from('users').select('id').eq('id', userId).maybeSingle()
+    if (!check && email) {
+      const { data: byEmail } = await supabaseAdmin.from('users').select('id').eq('email', email).maybeSingle()
+      resolvedId = byEmail?.id ?? null
+      if (!resolvedId) {
+        const { data: created } = await supabaseAdmin.from('users').insert({ email }).select('id').single()
+        resolvedId = created?.id ?? null
+      }
+    }
+  } else if (email) {
+    const { data: byEmail } = await supabaseAdmin.from('users').select('id').eq('email', email).maybeSingle()
+    resolvedId = byEmail?.id ?? null
+    if (!resolvedId) {
+      const { data: created } = await supabaseAdmin.from('users').insert({ email }).select('id').single()
+      resolvedId = created?.id ?? null
+    }
+  }
+  if (!resolvedId) redirect('/auth/register')
 
   const [{ data: user }, { data: predictions }] = await Promise.all([
-    supabaseAdmin.from('users').select('*').eq('id', userId).single(),
+    supabaseAdmin.from('users').select('*').eq('id', resolvedId).single(),
     supabaseAdmin
       .from('predictions')
       .select(`
         id, points_earned, is_perfect,
         matches (id, opponent, match_date, competition, status)
       `)
-      .eq('user_id', userId)
+      .eq('user_id', resolvedId)
       .order('submitted_at', { ascending: false }),
   ])
 
