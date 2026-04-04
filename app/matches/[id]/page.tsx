@@ -131,36 +131,51 @@ export default async function MatchPage({ params }: PageProps) {
         </div>
 
         {/* Results view for completed match */}
-        {isCompleted && pickedPlayerIds.length > 0 && correctPlayerIds.size > 0 && (
+        {isCompleted && correctPlayerIds.size > 0 && (
           <div className="mb-6">
             <h2 className="text-xs uppercase tracking-widest text-[#C5A55A] mb-3" style={{ fontFamily: "'Oswald', sans-serif" }}>
-              Your Picks vs Official Lineup
+              {pickedPlayerIds.length > 0 ? 'Your Picks vs Official Lineup' : 'Official Lineup'}
             </h2>
             <div className="space-y-1.5">
               {(players || [])
-                .filter(p => pickedPlayerIds.includes(p.id))
+                .filter(p => correctPlayerIds.has(p.id))
                 .map(player => {
-                  const correct = correctPlayerIds.has(player.id)
+                  const userPicked = pickedPlayerIds.includes(player.id)
                   return (
                     <div
                       key={player.id}
-                      className={`flex items-center gap-3 p-2.5 rounded-lg ${
-                        correct ? 'bg-green-900/20 border border-green-500/30' : 'bg-red-900/20 border border-[#CE0E2D]/30'
+                      className={`flex items-center gap-3 p-2.5 rounded-lg border ${
+                        userPicked
+                          ? 'bg-green-900/20 border-green-500/30'
+                          : 'bg-white/5 border-white/10'
                       }`}
                     >
-                      <span className={`text-lg flex-shrink-0 ${correct ? 'text-green-400' : 'text-[#CE0E2D]'}`}>
-                        {correct ? '✓' : '✗'}
+                      <span className={`text-lg flex-shrink-0 w-6 text-center ${userPicked ? 'text-green-400' : 'text-white/20'}`}>
+                        {userPicked ? '✓' : '·'}
                       </span>
-                      <span className="font-semibold uppercase tracking-wide text-sm text-[#F5F0E8]" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                      <span className={`font-semibold uppercase tracking-wide text-sm ${userPicked ? 'text-[#F5F0E8]' : 'text-white/50'}`} style={{ fontFamily: "'Oswald', sans-serif" }}>
                         {player.name}
                       </span>
                       {player.position && (
-                        <span className="text-xs text-white/40 ml-auto">{player.position}</span>
+                        <span className="text-xs text-white/30 ml-auto">{player.position}</span>
+                      )}
+                      {!userPicked && pickedPlayerIds.length > 0 && (
+                        <span className="text-xs text-white/20 uppercase tracking-wider" style={{ fontFamily: "'Oswald', sans-serif" }}>missed</span>
                       )}
                     </div>
                   )
                 })}
             </div>
+          </div>
+        )}
+
+        {/* Completed match, no picks submitted */}
+        {isCompleted && pickedPlayerIds.length === 0 && correctPlayerIds.size === 0 && (
+          <div className="text-center py-12 text-white/40">
+            <p className="text-4xl mb-3">📋</p>
+            <p className="uppercase tracking-widest text-sm" style={{ fontFamily: "'Oswald', sans-serif" }}>
+              Match Complete — No Picks Submitted
+            </p>
           </div>
         )}
 

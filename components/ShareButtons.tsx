@@ -1,5 +1,7 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+
 interface ShareButtonsProps {
   score: number
   opponent: string
@@ -7,8 +9,9 @@ interface ShareButtonsProps {
 }
 
 export default function ShareButtons({ score, opponent, matchId }: ShareButtonsProps) {
-  const appUrl = typeof window !== 'undefined' ? window.location.origin : ''
-  const shareUrl = `${appUrl}/share/${matchId}`
+  const [origin, setOrigin] = useState('')
+  useEffect(() => { setOrigin(window.location.origin) }, [])
+  const shareUrl = `${origin}/share/${matchId}`
   const text = `I scored ${score}/11 on Rev11 for #NERevs vs ${opponent}! Can you beat me?`
 
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}&hashtags=NERevs,Rev11`

@@ -19,11 +19,11 @@ export default async function AdminPage() {
     supabaseAdmin.from('users').select('*', { count: 'exact', head: true }),
     supabaseAdmin.from('matches').select('*', { count: 'exact', head: true }),
     supabaseAdmin.from('players').select('*', { count: 'exact', head: true }).eq('is_active', true),
-    supabase
+    supabaseAdmin
       .from('correct_lineups')
       .select('id, status, matches (id, opponent, match_date)')
       .eq('status', 'pending'),
-    supabase
+    supabaseAdmin
       .from('matches')
       .select('id, opponent, match_date')
       .eq('status', 'upcoming')

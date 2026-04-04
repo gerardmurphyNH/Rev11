@@ -2,7 +2,7 @@ import { formatInTimeZone } from 'date-fns-tz'
 import { format, parseISO, isPast, differenceInMinutes, differenceInSeconds } from 'date-fns'
 
 const EASTERN_TZ = 'America/New_York'
-const LOCK_MINUTES_BEFORE = 45
+const LOCK_MINUTES_BEFORE = 60
 
 export function formatMatchDate(dateStr: string): string {
   return formatInTimeZone(parseISO(dateStr), EASTERN_TZ, 'EEE, MMM d')
