@@ -8,29 +8,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
     }
 
-    // Upsert user
-    const { data: user } = await supabaseAdmin
+    // Always fetch-or-create: look up first, insert only if missing
+    const { data: existing } = await supabaseAdmin
       .from('users')
-      .upsert({ email }, { onConflict: 'email', ignoreDuplicates: true })
+      .select('id, email')
+      .eq('email', email)
+      .maybeSingle()
+
+    if (existing) {
+      return setAuthCookies(existing.id, existing.email)
+    }
+
+    const { data: created } = await supabaseAdmin
+      .from('users')
+      .insert({ email })
       .select('id, email')
       .single()
 
-    if (!user) {
-      // upsert with ignoreDuplicates won't return on conflict — fetch separately
-      const { data: existing } = await supabaseAdmin
+    if (!created) {
+      // Race condition: another request inserted first — fetch it
+      const { data: raceWinner } = await supabaseAdmin
         .from('users')
         .select('id, email')
         .eq('email', email)
         .single()
-
-      if (!existing) {
-        return NextResponse.json({ error: 'Failed to create account' }, { status: 500 })
-      }
-
-      return setAuthCookies(existing.id, existing.email)
+      if (!raceWinner) return NextResponse.json({ error: 'Failed to create account' }, { status: 500 })
+      return setAuthCookies(raceWinner.id, raceWinner.email)
     }
 
-    return setAuthCookies(user.id, user.email)
+    return setAuthCookies(created.id, created.email)
   } catch (error) {
     console.error('Register error:', error)
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
