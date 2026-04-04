@@ -33,7 +33,7 @@ export default function LineupPicker({ matchId, players, initialPicks = [], isLo
   const [selectedIds, setSelectedIds] = useState<string[]>(initialPicks)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [submitted, setSubmitted] = useState(initialPicks.length === 11)
   const [activeFilter, setActiveFilter] = useState<string>('ALL')
   const [showXI, setShowXI] = useState(false)
 
@@ -64,8 +64,12 @@ export default function LineupPicker({ matchId, players, initialPicks = [], isLo
       })
       if (res.ok) {
         setSaved(true)
-        if (selectedIds.length === 11) setSubmitted(true)
-        setTimeout(() => setSaved(false), 3000)
+        if (selectedIds.length === 11) {
+          setSubmitted(true)
+          setTimeout(() => router.push('/leaderboard'), 1500)
+        } else {
+          setTimeout(() => setSaved(false), 3000)
+        }
       }
     } catch {
       alert('Failed to save. Please try again.')
@@ -166,10 +170,12 @@ export default function LineupPicker({ matchId, players, initialPicks = [], isLo
               ) : saved ? (
                 <span className="flex items-center justify-center gap-2">
                   <span>✓</span>
-                  {submitted ? "Crate Thrown!" : "Saved!"}
+                  {submitted ? 'Picks Submitted!' : 'Saved!'}
                 </span>
+              ) : submitted ? (
+                '✏️ Edit Picks'
               ) : selectedIds.length === 11 ? (
-                '⚔️ Bring the Fight'
+                '⚔️ Submit Picks'
               ) : (
                 `Pick ${11 - selectedIds.length} more`
               )}
@@ -186,8 +192,8 @@ export default function LineupPicker({ matchId, players, initialPicks = [], isLo
 
           {/* Pick confirmation message */}
           {submitted && !isLocked && (
-            <p className="text-center text-xs text-white/50 mt-2 animate-fade-up">
-              Your crate has been thrown! Edit anytime before lock.
+            <p className="text-center text-xs text-white/50 mt-2">
+              Picks saved — edit anytime before kickoff.
             </p>
           )}
         </div>
