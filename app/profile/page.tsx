@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
-import { createServerSupabase } from '@/lib/supabase'
+import { createServerSupabase, supabaseAdmin } from '@/lib/supabase'
 import { getDisplayName, getOrdinal, formatMatchDate } from '@/lib/utils'
 
 export default async function ProfilePage() {
@@ -10,11 +10,9 @@ export default async function ProfilePage() {
   const userId = cookieStore.get('rev11_user_id')?.value
   if (!userId) redirect('/auth/register')
 
-  const supabase = await createServerSupabase()
-
   const [{ data: user }, { data: predictions }] = await Promise.all([
-    supabase.from('users').select('*').eq('id', userId).single(),
-    supabase
+    supabaseAdmin.from('users').select('*').eq('id', userId).single(),
+    supabaseAdmin
       .from('predictions')
       .select(`
         id, points_earned, is_perfect,
@@ -27,7 +25,7 @@ export default async function ProfilePage() {
   if (!user) redirect('/auth/register')
 
   // Get rank
-  const { count } = await supabase
+  const { count } = await supabaseAdmin
     .from('users')
     .select('*', { count: 'exact', head: true })
     .gt('total_points', user.total_points)

@@ -5,7 +5,7 @@ import Navigation from '@/components/Navigation'
 import LineupPicker from '@/components/LineupPicker'
 import CountdownTimer from '@/components/CountdownTimer'
 import ShareButtons from '@/components/ShareButtons'
-import { createServerSupabase } from '@/lib/supabase'
+import { createServerSupabase, supabaseAdmin } from '@/lib/supabase'
 import { formatMatchDate, formatMatchTime, isMatchLocked } from '@/lib/utils'
 
 interface PageProps {
@@ -24,7 +24,7 @@ export default async function MatchPage({ params }: PageProps) {
   const [{ data: match }, { data: players }, { data: prediction }] = await Promise.all([
     supabase.from('matches').select('*').eq('id', id).single(),
     supabase.from('players').select('*').eq('is_active', true).order('position').order('name'),
-    supabase
+    supabaseAdmin
       .from('predictions')
       .select('id, points_earned, is_perfect')
       .eq('match_id', id)
@@ -40,7 +40,7 @@ export default async function MatchPage({ params }: PageProps) {
   // Get user's picked player IDs
   let pickedPlayerIds: string[] = []
   if (prediction) {
-    const { data: picks } = await supabase
+    const { data: picks } = await supabaseAdmin
       .from('prediction_players')
       .select('player_id')
       .eq('prediction_id', prediction.id)
