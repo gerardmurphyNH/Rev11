@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import { createServerSupabase, supabaseAdmin } from '@/lib/supabase'
-import { getDisplayName, getOrdinal, formatMatchDate } from '@/lib/utils'
+import { getDisplayName, getOrdinal, formatMatchDate, isMatchLocked } from '@/lib/utils'
 
 export default async function ProfilePage() {
   const cookieStore = await cookies()
@@ -94,15 +94,13 @@ export default async function ProfilePage() {
               {predictions.map(pred => {
                 const match = pred.matches as any
                 if (!match) return null
-                return (
-                  <Link
-                    key={pred.id}
-                    href={`/matches/${match.id}`}
-                    className="flex items-center gap-3 p-3 bg-[#0D2D52] rounded-lg border border-white/10 hover:border-white/20 transition-all"
-                  >
+                const locked = isMatchLocked(match.match_date) || match.status === 'locked' || match.status === 'completed'
+                const rowClass = "flex items-center gap-3 p-3 bg-[#0D2D52] rounded-lg border border-white/10 transition-all"
+                const inner = (
+                  <>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold uppercase text-sm text-[#F5F0E8] truncate" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                        vs {match.opponent}
+                        {match.is_home ? 'vs' : '@'} {match.opponent}
                       </p>
                       <p className="text-xs text-white/40">{formatMatchDate(match.match_date)} · {match.competition}</p>
                     </div>
@@ -120,13 +118,26 @@ export default async function ProfilePage() {
                         </div>
                       ) : (
                         <span className="text-white/30 text-xs uppercase" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                          {match.status === 'completed' ? 'N/A' : 'Pending'}
+                          {locked ? '🔒 Locked' : 'Edit Picks'}
                         </span>
                       )}
                     </div>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/20">
-                      <path d="M9 18l6-6-6-6" />
-                    </svg>
+                    {locked ? (
+                      <span className="text-white/20 text-sm">🔒</span>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/20">
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
+                    )}
+                  </>
+                )
+                return locked ? (
+                  <div key={pred.id} className={rowClass}>
+                    {inner}
+                  </div>
+                ) : (
+                  <Link key={pred.id} href={`/matches/${match.id}`} className={`${rowClass} hover:border-white/20`}>
+                    {inner}
                   </Link>
                 )
               })}
