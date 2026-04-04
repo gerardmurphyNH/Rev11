@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import ShareButtons from '@/components/ShareButtons'
-import { createServerSupabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import { formatMatchDate } from '@/lib/utils'
 
 interface PageProps {
@@ -13,7 +13,7 @@ interface PageProps {
 export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { matchId } = await params
   const { userId } = await searchParams
-  const supabase = await createServerSupabase()
+  const supabase = supabaseAdmin
   const { data: match } = await supabase.from('matches').select('opponent, match_date').eq('id', matchId).single()
 
   let score = ''
@@ -46,7 +46,7 @@ export default async function SharePage({ params, searchParams }: PageProps) {
 
   const userId = shareUserId || currentUserId
 
-  const supabase = await createServerSupabase()
+  const supabase = supabaseAdmin
   const { data: match } = await supabase.from('matches').select('*').eq('id', matchId).single()
 
   let prediction = null

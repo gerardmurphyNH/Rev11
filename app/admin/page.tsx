@@ -1,15 +1,13 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createServerSupabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import { isAdmin, formatMatchDate } from '@/lib/utils'
 
 export default async function AdminPage() {
   const cookieStore = await cookies()
   const userEmail = cookieStore.get('rev11_user_email')?.value
   if (!userEmail || !isAdmin(userEmail)) redirect('/')
-
-  const supabase = await createServerSupabase()
 
   const [
     { count: userCount },
@@ -18,9 +16,9 @@ export default async function AdminPage() {
     { data: pendingLineups },
     { data: errorMatches },
   ] = await Promise.all([
-    supabase.from('users').select('*', { count: 'exact', head: true }),
-    supabase.from('matches').select('*', { count: 'exact', head: true }),
-    supabase.from('players').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    supabaseAdmin.from('users').select('*', { count: 'exact', head: true }),
+    supabaseAdmin.from('matches').select('*', { count: 'exact', head: true }),
+    supabaseAdmin.from('players').select('*', { count: 'exact', head: true }).eq('is_active', true),
     supabase
       .from('correct_lineups')
       .select('id, status, matches (id, opponent, match_date)')
