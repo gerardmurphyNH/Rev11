@@ -132,40 +132,77 @@ export default async function MatchPage({ params }: PageProps) {
 
         {/* Results view for completed match */}
         {isCompleted && correctPlayerIds.size > 0 && (
-          <div className="mb-6">
-            <h2 className="text-xs uppercase tracking-widest text-[#C5A55A] mb-3" style={{ fontFamily: "'Oswald', sans-serif" }}>
-              {pickedPlayerIds.length > 0 ? 'Your Picks vs Official Lineup' : 'Official Lineup'}
-            </h2>
-            <div className="space-y-1.5">
-              {(players || [])
-                .filter(p => correctPlayerIds.has(p.id))
-                .map(player => {
-                  const userPicked = pickedPlayerIds.includes(player.id)
-                  return (
-                    <div
-                      key={player.id}
-                      className={`flex items-center gap-3 p-2.5 rounded-lg border ${
-                        userPicked
-                          ? 'bg-green-900/20 border-green-500/30'
-                          : 'bg-white/5 border-white/10'
-                      }`}
-                    >
-                      <span className={`text-lg flex-shrink-0 w-6 text-center ${userPicked ? 'text-green-400' : 'text-white/20'}`}>
-                        {userPicked ? '✓' : '·'}
-                      </span>
-                      <span className={`font-semibold uppercase tracking-wide text-sm ${userPicked ? 'text-[#F5F0E8]' : 'text-white/50'}`} style={{ fontFamily: "'Oswald', sans-serif" }}>
-                        {player.name}
-                      </span>
-                      {player.position && (
-                        <span className="text-xs text-white/30 ml-auto">{player.position}</span>
-                      )}
-                      {!userPicked && pickedPlayerIds.length > 0 && (
-                        <span className="text-xs text-white/20 uppercase tracking-wider" style={{ fontFamily: "'Oswald', sans-serif" }}>missed</span>
-                      )}
-                    </div>
-                  )
-                })}
+          <div className="mb-6 space-y-4">
+            {/* Official lineup: correct picks (green ✓) and missed (gray ·) */}
+            <div>
+              <h2 className="text-xs uppercase tracking-widest text-[#C5A55A] mb-3" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                {pickedPlayerIds.length > 0 ? 'Official Lineup — Your Picks' : 'Official Lineup'}
+              </h2>
+              <div className="space-y-1.5">
+                {(players || [])
+                  .filter(p => correctPlayerIds.has(p.id))
+                  .map(player => {
+                    const userPicked = pickedPlayerIds.includes(player.id)
+                    return (
+                      <div
+                        key={player.id}
+                        className={`flex items-center gap-3 p-2.5 rounded-lg border ${
+                          userPicked
+                            ? 'bg-green-900/20 border-green-500/30'
+                            : 'bg-white/5 border-white/10'
+                        }`}
+                      >
+                        <span className={`text-lg flex-shrink-0 w-6 text-center ${userPicked ? 'text-green-400' : 'text-white/20'}`}>
+                          {userPicked ? '✓' : '·'}
+                        </span>
+                        <span className={`font-semibold uppercase tracking-wide text-sm ${userPicked ? 'text-[#F5F0E8]' : 'text-white/50'}`} style={{ fontFamily: "'Oswald', sans-serif" }}>
+                          {player.name}
+                        </span>
+                        {player.position && (
+                          <span className="text-xs text-white/30 ml-auto">{player.position}</span>
+                        )}
+                        {!userPicked && pickedPlayerIds.length > 0 && (
+                          <span className="text-xs text-white/20 uppercase tracking-wider" style={{ fontFamily: "'Oswald', sans-serif" }}>missed</span>
+                        )}
+                      </div>
+                    )
+                  })}
+              </div>
             </div>
+
+            {/* Wrong picks: players the user picked that were NOT in the correct lineup */}
+            {pickedPlayerIds.length > 0 && (() => {
+              const wrongPicks = (players || []).filter(
+                p => pickedPlayerIds.includes(p.id) && !correctPlayerIds.has(p.id)
+              )
+              if (wrongPicks.length === 0) return null
+              return (
+                <div>
+                  <h2 className="text-xs uppercase tracking-widest text-red-400/70 mb-3" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                    Wrong Picks ({wrongPicks.length})
+                  </h2>
+                  <div className="space-y-1.5">
+                    {wrongPicks.map(player => (
+                      <div
+                        key={player.id}
+                        className="flex items-center gap-3 p-2.5 rounded-lg border bg-red-900/10 border-red-500/20"
+                      >
+                        <span className="text-lg flex-shrink-0 w-6 text-center text-red-400/60">✗</span>
+                        <span className="font-semibold uppercase tracking-wide text-sm text-white/40" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                          {player.name}
+                        </span>
+                        {player.position && (
+                          <span className="text-xs text-white/20 ml-auto">{player.position}</span>
+                        )}
+                        <span className="text-xs text-red-400/50 uppercase tracking-wider" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                          not selected
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         )}
 

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { getOrdinal } from '@/lib/utils'
 
 interface LeaderboardEntry {
@@ -92,23 +93,31 @@ export default function Leaderboard({ entries, currentUserId }: LeaderboardProps
                   </span>
                 </td>
 
-                {/* Name */}
+                {/* Name — clickable link to user's picks page */}
                 <td className="py-3 px-3">
-                  <div className="flex items-center gap-2">
+                  <Link
+                    href={`/users/${entry.user_id}`}
+                    className="flex items-center gap-2 group"
+                  >
                     <span
-                      className={`font-semibold uppercase tracking-wide text-sm ${
-                        isCurrentUser ? 'text-[#F5F0E8]' : 'text-white/80'
+                      className={`font-semibold uppercase tracking-wide text-sm transition-colors ${
+                        isCurrentUser
+                          ? 'text-[#F5F0E8] group-hover:text-[#C5A55A]'
+                          : 'text-white/80 group-hover:text-[#F5F0E8]'
                       }`}
                       style={{ fontFamily: "'Oswald', sans-serif" }}
                     >
                       {entry.display_name}
                     </span>
                     {isCurrentUser && (
-                      <span className="text-[10px] bg-[#CE0E2D]/20 text-[#CE0E2D] px-1.5 py-0.5 rounded uppercase tracking-wider" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                      <span
+                        className="text-[10px] bg-[#CE0E2D]/20 text-[#CE0E2D] px-1.5 py-0.5 rounded uppercase tracking-wider"
+                        style={{ fontFamily: "'Oswald', sans-serif" }}
+                      >
                         You
                       </span>
                     )}
-                  </div>
+                  </Link>
                 </td>
 
                 {/* Points */}
@@ -130,7 +139,10 @@ export default function Leaderboard({ entries, currentUserId }: LeaderboardProps
 
                 {/* Perfect scores */}
                 <td className="py-3 px-3 text-right hidden sm:table-cell">
-                  <span className={`text-sm ${entry.perfect_scores > 0 ? 'text-[#C5A55A]' : 'text-white/20'}`} style={{ fontFamily: 'Courier New, monospace' }}>
+                  <span
+                    className={`text-sm ${entry.perfect_scores > 0 ? 'text-[#C5A55A]' : 'text-white/20'}`}
+                    style={{ fontFamily: 'Courier New, monospace' }}
+                  >
                     {entry.perfect_scores > 0 ? `${entry.perfect_scores} 🎯` : '—'}
                   </span>
                 </td>

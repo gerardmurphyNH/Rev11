@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 const navItems = [
   {
@@ -40,6 +41,14 @@ const navItems = [
 
 export default function Navigation() {
   const pathname = usePathname()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((data) => setIsAdmin(data.isAdmin === true))
+      .catch(() => {})
+  }, [])
 
   // Don't show nav on auth pages or admin
   if (pathname.startsWith('/auth') || pathname.startsWith('/admin')) return null
@@ -80,7 +89,23 @@ export default function Navigation() {
           })}
         </div>
         <div className="p-6 border-t border-white/10">
-          <p className="text-white/30 text-xs text-center uppercase tracking-wider" style={{ fontFamily: "'Oswald', sans-serif" }}>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex items-center justify-center gap-2 w-full mb-3 px-3 py-2 bg-[#CE0E2D]/10 border border-[#CE0E2D]/30 rounded text-[#CE0E2D] text-xs font-semibold uppercase tracking-wider hover:bg-[#CE0E2D]/20 transition-colors"
+              style={{ fontFamily: "'Oswald', sans-serif" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              Admin
+            </Link>
+          )}
+          <p
+            className="text-white/30 text-xs text-center uppercase tracking-wider"
+            style={{ fontFamily: "'Oswald', sans-serif" }}
+          >
             ★ The Fort ★
           </p>
         </div>
@@ -109,6 +134,23 @@ export default function Navigation() {
               </Link>
             )
           })}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex flex-col items-center gap-1 px-4 py-2 min-w-[64px] text-[#CE0E2D]/70 hover:text-[#CE0E2D] transition-all"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              <span
+                className="text-[10px] uppercase tracking-wider"
+                style={{ fontFamily: "'Oswald', sans-serif" }}
+              >
+                Admin
+              </span>
+            </Link>
+          )}
         </div>
       </nav>
     </>

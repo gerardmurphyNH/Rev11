@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
 import { isAdmin, formatMatchDate } from '@/lib/utils'
+import AdminPointsAdjuster from '@/components/AdminPointsAdjuster'
 
 export default async function AdminPage() {
   const cookieStore = await cookies()
@@ -15,6 +16,7 @@ export default async function AdminPage() {
     { count: playerCount },
     { data: pendingLineups },
     { data: errorMatches },
+    { data: allUsers },
   ] = await Promise.all([
     supabaseAdmin.from('users').select('*', { count: 'exact', head: true }),
     supabaseAdmin.from('matches').select('*', { count: 'exact', head: true }),
@@ -28,6 +30,10 @@ export default async function AdminPage() {
       .select('id, opponent, match_date')
       .eq('status', 'upcoming')
       .lt('match_date', new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()),
+    supabaseAdmin
+      .from('users')
+      .select('id, email, display_name, total_points, games_played')
+      .order('total_points', { ascending: false }),
   ])
 
   const adminLinks = [
@@ -96,6 +102,11 @@ export default async function AdminPage() {
               <p className="text-white/40 text-sm mt-1">{desc}</p>
             </Link>
           ))}
+        </div>
+
+        {/* Manual point adjustment */}
+        <div className="mb-6">
+          <AdminPointsAdjuster users={allUsers || []} />
         </div>
 
         {/* Scrape buttons */}
