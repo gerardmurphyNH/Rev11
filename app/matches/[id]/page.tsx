@@ -5,8 +5,9 @@ import Navigation from '@/components/Navigation'
 import LineupPicker from '@/components/LineupPicker'
 import CountdownTimer from '@/components/CountdownTimer'
 import ShareButtons from '@/components/ShareButtons'
+import CommunityPicks from '@/components/CommunityPicks'
 import { supabaseAdmin } from '@/lib/supabase'
-import { formatMatchDate, formatMatchTime, isMatchLocked } from '@/lib/utils'
+import { formatMatchDate, formatMatchTime, isMatchLocked, calcScorePoints } from '@/lib/utils'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -37,7 +38,7 @@ export default async function MatchPage({ params }: PageProps) {
     supabaseAdmin.from('players').select('*').eq('is_active', true).order('position').order('name'),
     supabaseAdmin
       .from('predictions')
-      .select('id, points_earned, is_perfect')
+      .select('id, points_earned, score_points_earned, is_perfect, predicted_revs_score, predicted_opp_score')
       .eq('match_id', id)
       .eq('user_id', resolvedUserId)
       .maybeSingle(),
@@ -106,7 +107,7 @@ export default async function MatchPage({ params }: PageProps) {
 
           {/* Status bar */}
           {isCompleted && prediction && (
-            <div className="mt-4 bg-[#0D2D52] rounded-lg border border-[#C5A55A]/30 p-4">
+            <div className="mt-4 bg-[#0D2D52] rounded-lg border border-[#C5A55A]/30 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-widest text-[#C5A55A] mb-1" style={{ fontFamily: "'Oswald', sans-serif" }}>
@@ -117,7 +118,7 @@ export default async function MatchPage({ params }: PageProps) {
                     <span className="text-white/30 text-lg"> pts</span>
                   </p>
                   {prediction.is_perfect && (
-                    <p className="text-[#C5A55A] text-sm font-bold mt-1">🎯 Perfect Score! +3 Bonus</p>
+                    <p className="text-[#C5A55A] text-sm font-bold mt-1">🎯 Perfect Lineup! +3 Bonus</p>
                   )}
                 </div>
                 <ShareButtons
@@ -126,6 +127,49 @@ export default async function MatchPage({ params }: PageProps) {
                   matchId={match.id}
                 />
               </div>
+
+              {/* Score prediction result */}
+              {match.revs_score != null && match.opp_score != null && (
+                <div className="border-t border-white/10 pt-3">
+                  <p className="text-xs uppercase tracking-widest text-[#C5A55A] mb-2" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                    Score Prediction
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-white/70">
+                      <span className="text-white/40 text-xs uppercase tracking-wider mr-1">Final:</span>
+                      <span className="font-bold text-[#F5F0E8]" style={{ fontFamily: 'Courier New, monospace' }}>
+                        Revs {match.revs_score} – {match.opp_score} {match.opponent}
+                      </span>
+                    </div>
+                  </div>
+                  {prediction.predicted_revs_score != null && prediction.predicted_opp_score != null ? (
+                    <div className="mt-1.5 flex items-center gap-3">
+                      <span className="text-white/40 text-xs uppercase tracking-wider">Your pick:</span>
+                      <span className="font-bold text-sm" style={{ fontFamily: 'Courier New, monospace' }}>
+                        {prediction.predicted_revs_score} – {prediction.predicted_opp_score}
+                      </span>
+                      {(() => {
+                        const sp = calcScorePoints(
+                          prediction.predicted_revs_score,
+                          prediction.predicted_opp_score,
+                          match.revs_score,
+                          match.opp_score
+                        )
+                        const isExact = prediction.predicted_revs_score === match.revs_score &&
+                          prediction.predicted_opp_score === match.opp_score
+                        return (
+                          <span className={`text-xs font-bold uppercase tracking-wider ${sp > 0 ? 'text-green-400' : 'text-white/30'}`}
+                            style={{ fontFamily: "'Oswald', sans-serif" }}>
+                            {isExact ? '🎯 Exact! ' : ''}{sp > 0 ? `+${sp} pts` : 'No pts'}
+                          </span>
+                        )
+                      })()}
+                    </div>
+                  ) : (
+                    <p className="text-white/30 text-xs mt-1">No score prediction submitted</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -222,6 +266,9 @@ export default async function MatchPage({ params }: PageProps) {
             matchId={match.id}
             players={players || []}
             initialPicks={pickedPlayerIds}
+            initialRevsScore={prediction?.predicted_revs_score ?? null}
+            initialOppScore={prediction?.predicted_opp_score ?? null}
+            opponent={match.opponent}
             isLocked={locked}
           />
         )}
@@ -235,6 +282,9 @@ export default async function MatchPage({ params }: PageProps) {
             </p>
           </div>
         )}
+
+        {/* Community picks — only shown after match is completed */}
+        {isCompleted && <CommunityPicks matchId={id} currentUserId={resolvedUserId!} />}
       </main>
     </div>
   )

@@ -69,11 +69,19 @@ export default async function LeaderboardPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-center gap-2">
               <span className="text-[#C5A55A]">⚽</span>
-              <span className="text-white/70 text-sm">1 point per correct player</span>
+              <span className="text-white/70 text-sm">1 pt per correct player</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[#C5A55A]">🎯</span>
-              <span className="text-white/70 text-sm">11/11 = 14 pts (+3 bonus)</span>
+              <span className="text-white/70 text-sm">11/11 lineup = 14 pts</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[#C5A55A]">📊</span>
+              <span className="text-white/70 text-sm">Score result = +1–3 pts</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[#C5A55A]">🏆</span>
+              <span className="text-white/70 text-sm">Exact scoreline = +7 pts</span>
             </div>
           </div>
         </div>

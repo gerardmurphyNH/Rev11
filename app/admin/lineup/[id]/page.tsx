@@ -19,6 +19,8 @@ export default function AdminLineupPage({ params }: { params: Promise<{ id: stri
   const [saving, setSaving] = useState(false)
   const [scoring, setScoring] = useState(false)
   const [message, setMessage] = useState('')
+  const [finalRevsScore, setFinalRevsScore] = useState<string>('')
+  const [finalOppScore, setFinalOppScore] = useState<string>('')
 
   useEffect(() => {
     Promise.all([
@@ -31,6 +33,8 @@ export default function AdminLineupPage({ params }: { params: Promise<{ id: stri
         setExistingLineup(matchData.correctLineup)
         setSelectedIds(matchData.correctLineupPlayerIds || [])
       }
+      if (matchData.match?.revs_score != null) setFinalRevsScore(String(matchData.match.revs_score))
+      if (matchData.match?.opp_score != null) setFinalOppScore(String(matchData.match.opp_score))
     })
   }, [id])
 
@@ -47,10 +51,19 @@ export default function AdminLineupPage({ params }: { params: Promise<{ id: stri
     }
     setSaving(true)
     setMessage('')
+    const revsNum = finalRevsScore !== '' ? parseInt(finalRevsScore, 10) : undefined
+    const oppNum = finalOppScore !== '' ? parseInt(finalOppScore, 10) : undefined
     const res = await fetch('/api/admin/lineup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ matchId: id, playerIds: selectedIds, confirm }),
+      body: JSON.stringify({
+        matchId: id,
+        playerIds: selectedIds,
+        confirm,
+        ...(revsNum !== undefined && !isNaN(revsNum) && oppNum !== undefined && !isNaN(oppNum)
+          ? { revsScore: revsNum, oppScore: oppNum }
+          : {}),
+      }),
       credentials: 'include',
     })
     const data = await res.json()
@@ -139,6 +152,42 @@ export default function AdminLineupPage({ params }: { params: Promise<{ id: stri
               </button>
             )
           })}
+        </div>
+
+        {/* Final score entry */}
+        <div className="mb-4 p-4 bg-[#0D2D52] rounded-lg border border-white/10">
+          <p className="text-xs uppercase tracking-widest text-[#C5A55A] mb-3" style={{ fontFamily: "'Oswald', sans-serif" }}>
+            Final Score <span className="text-white/30 normal-case tracking-normal">(required to score predictions)</span>
+          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 text-center">
+              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1" style={{ fontFamily: "'Oswald', sans-serif" }}>Revs</p>
+              <input
+                type="number"
+                min={0}
+                max={20}
+                value={finalRevsScore}
+                onChange={e => setFinalRevsScore(e.target.value)}
+                placeholder="—"
+                className="w-full text-center bg-[#0A2240] border border-white/20 rounded px-2 py-2 text-[#F5F0E8] text-xl font-bold focus:outline-none focus:border-[#C5A55A]"
+                style={{ fontFamily: 'Courier New, monospace' }}
+              />
+            </div>
+            <span className="text-white/30 text-xl font-bold pb-1">–</span>
+            <div className="flex-1 text-center">
+              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1" style={{ fontFamily: "'Oswald', sans-serif" }}>{match?.opponent ?? 'Opponent'}</p>
+              <input
+                type="number"
+                min={0}
+                max={20}
+                value={finalOppScore}
+                onChange={e => setFinalOppScore(e.target.value)}
+                placeholder="—"
+                className="w-full text-center bg-[#0A2240] border border-white/20 rounded px-2 py-2 text-[#F5F0E8] text-xl font-bold focus:outline-none focus:border-[#C5A55A]"
+                style={{ fontFamily: 'Courier New, monospace' }}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Actions */}

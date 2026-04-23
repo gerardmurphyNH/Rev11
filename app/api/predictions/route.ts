@@ -10,10 +10,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
-  const { matchId, playerIds } = await req.json()
+  const { matchId, playerIds, predictedRevsScore, predictedOppScore } = await req.json()
   if (!matchId || !Array.isArray(playerIds) || playerIds.length > 11) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
+
+  // Validate score predictions (0–20 or null)
+  const revsScore = (typeof predictedRevsScore === 'number' && predictedRevsScore >= 0 && predictedRevsScore <= 20)
+    ? Math.round(predictedRevsScore) : null
+  const oppScore = (typeof predictedOppScore === 'number' && predictedOppScore >= 0 && predictedOppScore <= 20)
+    ? Math.round(predictedOppScore) : null
 
   // Get match & enforce lock server-side
   const { data: match } = await supabaseAdmin
@@ -44,7 +50,11 @@ export async function POST(req: NextRequest) {
     predictionId = existing.id
     await supabaseAdmin
       .from('predictions')
-      .update({ updated_at: new Date().toISOString() })
+      .update({
+        updated_at: new Date().toISOString(),
+        ...(revsScore !== null && { predicted_revs_score: revsScore }),
+        ...(oppScore !== null && { predicted_opp_score: oppScore }),
+      })
       .eq('id', predictionId)
 
     // Delete old picks
@@ -55,7 +65,12 @@ export async function POST(req: NextRequest) {
   } else {
     const { data: newPred } = await supabaseAdmin
       .from('predictions')
-      .insert({ user_id: userId, match_id: matchId })
+      .insert({
+        user_id: userId,
+        match_id: matchId,
+        ...(revsScore !== null && { predicted_revs_score: revsScore }),
+        ...(oppScore !== null && { predicted_opp_score: oppScore }),
+      })
       .select('id')
       .single()
     predictionId = newPred!.id

@@ -1,5 +1,5 @@
 import { supabaseAdmin } from './supabase'
-import { calcPoints } from './utils'
+import { calcPoints, calcScorePoints } from './utils'
 
 export async function scoreMatch(matchId: string): Promise<{ scored: number; errors: string[] }> {
   const errors: string[] = []
@@ -24,10 +24,17 @@ export async function scoreMatch(matchId: string): Promise<{ scored: number; err
 
   const correctPlayerIds = new Set((correctPlayers || []).map(p => p.player_id))
 
+  // Get match actual score (for score prediction scoring)
+  const { data: matchData } = await supabaseAdmin
+    .from('matches')
+    .select('revs_score, opp_score')
+    .eq('id', matchId)
+    .single()
+
   // Get all predictions for this match
   const { data: predictions } = await supabaseAdmin
     .from('predictions')
-    .select('id, user_id')
+    .select('id, user_id, predicted_revs_score, predicted_opp_score')
     .eq('match_id', matchId)
     .eq('is_locked', false)
 
@@ -48,13 +55,25 @@ export async function scoreMatch(matchId: string): Promise<{ scored: number; err
       const pickedIds = (picks || []).map(p => p.player_id)
       const correctCount = pickedIds.filter(id => correctPlayerIds.has(id)).length
       const isPerfect = correctCount === 11
-      const points = calcPoints(correctCount)
+      const lineupPoints = calcPoints(correctCount)
+
+      // Score prediction bonus
+      const scorePoints = (matchData?.revs_score != null && matchData?.opp_score != null)
+        ? calcScorePoints(
+            prediction.predicted_revs_score,
+            prediction.predicted_opp_score,
+            matchData.revs_score,
+            matchData.opp_score
+          )
+        : 0
+      const points = lineupPoints + scorePoints
 
       // Update prediction
       await supabaseAdmin
         .from('predictions')
         .update({
           points_earned: points,
+          score_points_earned: scorePoints,
           is_perfect: isPerfect,
           is_locked: true,
         })

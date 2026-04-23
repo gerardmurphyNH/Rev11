@@ -18,6 +18,9 @@ interface LineupPickerProps {
   matchId: string
   players: Player[]
   initialPicks?: string[]
+  initialRevsScore?: number | null
+  initialOppScore?: number | null
+  opponent: string
   isLocked: boolean
 }
 
@@ -28,7 +31,7 @@ const POSITION_LABELS: Record<string, string> = {
   FWD: '⚡ Forwards',
 }
 
-export default function LineupPicker({ matchId, players, initialPicks = [], isLocked }: LineupPickerProps) {
+export default function LineupPicker({ matchId, players, initialPicks = [], initialRevsScore = null, initialOppScore = null, opponent, isLocked }: LineupPickerProps) {
   const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<string[]>(initialPicks)
   const [saving, setSaving] = useState(false)
@@ -36,6 +39,8 @@ export default function LineupPicker({ matchId, players, initialPicks = [], isLo
   const [submitted, setSubmitted] = useState(initialPicks.length === 11)
   const [activeFilter, setActiveFilter] = useState<string>('ALL')
   const [showXI, setShowXI] = useState(false)
+  const [revsScore, setRevsScore] = useState<string>(initialRevsScore != null ? String(initialRevsScore) : '')
+  const [oppScore, setOppScore] = useState<string>(initialOppScore != null ? String(initialOppScore) : '')
 
   const grouped = groupPlayersByPosition(players)
   const selectedPlayers = selectedIds.map(id => players.find(p => p.id === id)).filter(Boolean) as Player[]
@@ -55,11 +60,18 @@ export default function LineupPicker({ matchId, players, initialPicks = [], isLo
   const saveLineup = async () => {
     if (selectedIds.length === 0) return
     setSaving(true)
+    const parsedRevs = revsScore !== '' ? parseInt(revsScore, 10) : null
+    const parsedOpp = oppScore !== '' ? parseInt(oppScore, 10) : null
     try {
       const res = await fetch('/api/predictions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchId, playerIds: selectedIds }),
+        body: JSON.stringify({
+          matchId,
+          playerIds: selectedIds,
+          predictedRevsScore: !isNaN(parsedRevs!) ? parsedRevs : null,
+          predictedOppScore: !isNaN(parsedOpp!) ? parsedOpp : null,
+        }),
         credentials: 'include',
       })
       if (res.ok) {
@@ -146,6 +158,44 @@ export default function LineupPicker({ matchId, players, initialPicks = [], isLo
               />
             ))}
           </div>
+
+          {/* Score prediction */}
+          {!isLocked && (
+            <div className="mb-3 p-3 bg-white/5 rounded-lg border border-white/10">
+              <p className="text-xs uppercase tracking-widest text-[#C5A55A] mb-2" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                Score Prediction <span className="text-white/30 normal-case tracking-normal">+7 pts</span>
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 text-center">
+                  <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1" style={{ fontFamily: "'Oswald', sans-serif" }}>Revs</p>
+                  <input
+                    type="number"
+                    min={0}
+                    max={20}
+                    value={revsScore}
+                    onChange={e => { setRevsScore(e.target.value); setSaved(false) }}
+                    placeholder="—"
+                    className="w-full text-center bg-[#0A2240] border border-white/20 rounded px-2 py-2 text-[#F5F0E8] text-lg font-bold focus:outline-none focus:border-[#CE0E2D]"
+                    style={{ fontFamily: 'Courier New, monospace' }}
+                  />
+                </div>
+                <span className="text-white/30 text-lg font-bold pb-1">–</span>
+                <div className="flex-1 text-center">
+                  <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1" style={{ fontFamily: "'Oswald', sans-serif" }}>{opponent}</p>
+                  <input
+                    type="number"
+                    min={0}
+                    max={20}
+                    value={oppScore}
+                    onChange={e => { setOppScore(e.target.value); setSaved(false) }}
+                    placeholder="—"
+                    className="w-full text-center bg-[#0A2240] border border-white/20 rounded px-2 py-2 text-[#F5F0E8] text-lg font-bold focus:outline-none focus:border-[#CE0E2D]"
+                    style={{ fontFamily: 'Courier New, monospace' }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Submit button */}
           {!isLocked && (

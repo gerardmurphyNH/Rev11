@@ -64,6 +64,23 @@ export function calcPoints(correctCount: number): number {
   return correctCount
 }
 
+export function calcScorePoints(
+  predictedRevs: number | null | undefined,
+  predictedOpp: number | null | undefined,
+  actualRevs: number,
+  actualOpp: number
+): number {
+  if (predictedRevs == null || predictedOpp == null) return 0
+  let pts = 0
+  if (predictedRevs === actualRevs) pts++   // correct Revs goals
+  if (predictedOpp === actualOpp) pts++     // correct opponent goals
+  const predResult = predictedRevs > predictedOpp ? 'w' : predictedRevs < predictedOpp ? 'l' : 'd'
+  const actualResult = actualRevs > actualOpp ? 'w' : actualRevs < actualOpp ? 'l' : 'd'
+  if (predResult === actualResult) pts++    // correct result (win/draw/loss)
+  if (predictedRevs === actualRevs && predictedOpp === actualOpp) pts += 4 // perfect bonus
+  return pts
+}
+
 export function classNames(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(' ')
 }

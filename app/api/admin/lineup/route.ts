@@ -18,10 +18,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { matchId, playerIds, confirm } = await req.json()
+  const { matchId, playerIds, confirm, revsScore, oppScore } = await req.json()
 
   if (!matchId || !Array.isArray(playerIds) || playerIds.length !== 11) {
     return NextResponse.json({ error: 'matchId and exactly 11 playerIds required' }, { status: 400 })
+  }
+
+  // Store actual final score on the match if provided
+  if (typeof revsScore === 'number' && typeof oppScore === 'number') {
+    await supabaseAdmin
+      .from('matches')
+      .update({ revs_score: revsScore, opp_score: oppScore })
+      .eq('id', matchId)
   }
 
   // Upsert correct_lineup
