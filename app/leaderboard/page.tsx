@@ -77,11 +77,11 @@ export default async function LeaderboardPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[#C5A55A]">📊</span>
-              <span className="text-white/70 text-sm">Score result = +1–3 pts</span>
+              <span className="text-white/70 text-sm">Correct goals/winner = +1 ea</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[#C5A55A]">🏆</span>
-              <span className="text-white/70 text-sm">Exact scoreline = +7 pts</span>
+              <span className="text-white/70 text-sm">Exact scoreline = +4 pts</span>
             </div>
           </div>
         </div>

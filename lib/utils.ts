@@ -77,7 +77,7 @@ export function calcScorePoints(
   const predResult = predictedRevs > predictedOpp ? 'w' : predictedRevs < predictedOpp ? 'l' : 'd'
   const actualResult = actualRevs > actualOpp ? 'w' : actualRevs < actualOpp ? 'l' : 'd'
   if (predResult === actualResult) pts++    // correct result (win/draw/loss)
-  if (predictedRevs === actualRevs && predictedOpp === actualOpp) pts += 4 // perfect bonus
+  if (predictedRevs === actualRevs && predictedOpp === actualOpp) pts += 1 // exact scoreline bonus
   return pts
 }
 
