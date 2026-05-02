@@ -114,12 +114,13 @@ export default async function HomePage() {
             Join the Fight
           </Link>
 
-          <p className="mt-4 text-white/30 text-sm">
-            Already have an account?{' '}
-            <Link href="/auth/register" className="text-[#C5A55A] hover:underline">
-              Sign in
-            </Link>
-          </p>
+          <Link
+            href="/auth/register"
+            className="mt-4 block px-6 py-3 text-[#C5A55A] text-base font-semibold hover:text-white transition-colors"
+            style={{ fontFamily: "'Oswald', sans-serif", letterSpacing: '0.05em' }}
+          >
+            Already have an account? <span className="underline underline-offset-2">Sign in →</span>
+          </Link>
 
           <div className="absolute bottom-8 left-0 right-0 text-center">
             <p className="text-white/20 text-xs tracking-[0.4em] uppercase" style={{ fontFamily: "'Oswald', sans-serif" }}>
