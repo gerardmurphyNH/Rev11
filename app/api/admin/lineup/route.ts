@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase'
 import { isAdmin } from '@/lib/utils'
-import { scoreMatch } from '@/lib/scoring'
+import { scoreLineup } from '@/lib/scoring'
 import { sendResultsEmail } from '@/lib/email'
 import { getDisplayName } from '@/lib/utils'
 
@@ -18,18 +18,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { matchId, playerIds, confirm, revsScore, oppScore } = await req.json()
+  const { matchId, playerIds, confirm } = await req.json()
 
   if (!matchId || !Array.isArray(playerIds) || playerIds.length !== 11) {
     return NextResponse.json({ error: 'matchId and exactly 11 playerIds required' }, { status: 400 })
-  }
-
-  // Store actual final score on the match if provided
-  if (typeof revsScore === 'number' && typeof oppScore === 'number') {
-    await supabaseAdmin
-      .from('matches')
-      .update({ revs_score: revsScore, opp_score: oppScore })
-      .eq('id', matchId)
   }
 
   // Upsert correct_lineup
@@ -78,9 +70,9 @@ export async function POST(req: NextRequest) {
     .eq('id', lineupId)
     .single()
 
-  // Trigger scoring if confirmed
+  // Trigger lineup scoring if confirmed (Phase 1 only — score prediction is Phase 2)
   if (confirm) {
-    const { scored, errors } = await scoreMatch(matchId)
+    const { scored, errors } = await scoreLineup(matchId)
 
     // Send result emails
     if (scored > 0) {

@@ -129,47 +129,45 @@ export default async function MatchPage({ params }: PageProps) {
               </div>
 
               {/* Score prediction result */}
-              {match.revs_score != null && match.opp_score != null && (
-                <div className="border-t border-white/10 pt-3">
-                  <p className="text-xs uppercase tracking-widest text-[#C5A55A] mb-2" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                    Score Prediction
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="text-sm text-white/70">
-                      <span className="text-white/40 text-xs uppercase tracking-wider mr-1">Final:</span>
+              <div className="border-t border-white/10 pt-3">
+                <p className="text-xs uppercase tracking-widest text-[#C5A55A] mb-2" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                  Score Prediction
+                </p>
+                {match.revs_score != null && match.opp_score != null ? (
+                  <>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-white/40 text-xs uppercase tracking-wider">Final:</span>
                       <span className="font-bold text-[#F5F0E8]" style={{ fontFamily: 'Courier New, monospace' }}>
                         Revs {match.revs_score} – {match.opp_score} {match.opponent}
                       </span>
                     </div>
-                  </div>
-                  {prediction.predicted_revs_score != null && prediction.predicted_opp_score != null ? (
-                    <div className="mt-1.5 flex items-center gap-3">
-                      <span className="text-white/40 text-xs uppercase tracking-wider">Your pick:</span>
-                      <span className="font-bold text-sm" style={{ fontFamily: 'Courier New, monospace' }}>
-                        {prediction.predicted_revs_score} – {prediction.predicted_opp_score}
-                      </span>
-                      {(() => {
-                        const sp = calcScorePoints(
-                          prediction.predicted_revs_score,
-                          prediction.predicted_opp_score,
-                          match.revs_score,
-                          match.opp_score
-                        )
-                        const isExact = prediction.predicted_revs_score === match.revs_score &&
-                          prediction.predicted_opp_score === match.opp_score
-                        return (
-                          <span className={`text-xs font-bold uppercase tracking-wider ${sp > 0 ? 'text-green-400' : 'text-white/30'}`}
-                            style={{ fontFamily: "'Oswald', sans-serif" }}>
-                            {isExact ? '🎯 Exact! ' : ''}{sp > 0 ? `+${sp} pts` : 'No pts'}
-                          </span>
-                        )
-                      })()}
-                    </div>
-                  ) : (
-                    <p className="text-white/30 text-xs mt-1">No score prediction submitted</p>
-                  )}
-                </div>
-              )}
+                    {prediction.predicted_revs_score != null && prediction.predicted_opp_score != null ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-white/40 text-xs uppercase tracking-wider">Your pick:</span>
+                        <span className="font-bold text-sm" style={{ fontFamily: 'Courier New, monospace' }}>
+                          {prediction.predicted_revs_score} – {prediction.predicted_opp_score}
+                        </span>
+                        {(() => {
+                          const sp = prediction.score_points_earned ??
+                            calcScorePoints(prediction.predicted_revs_score, prediction.predicted_opp_score, match.revs_score, match.opp_score)
+                          const isExact = prediction.predicted_revs_score === match.revs_score &&
+                            prediction.predicted_opp_score === match.opp_score
+                          return (
+                            <span className={`text-xs font-bold uppercase tracking-wider ${sp > 0 ? 'text-green-400' : 'text-white/30'}`}
+                              style={{ fontFamily: "'Oswald', sans-serif" }}>
+                              {isExact ? '🎯 Exact! ' : ''}{sp > 0 ? `+${sp} pts` : 'No bonus pts'}
+                            </span>
+                          )
+                        })()}
+                      </div>
+                    ) : (
+                      <p className="text-white/30 text-xs">No score prediction submitted</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-white/40 text-xs">⏳ Final score not yet entered — check back for bonus points</p>
+                )}
+              </div>
             </div>
           )}
         </div>
